@@ -1,3 +1,4 @@
+import csv
 import re
 
 from bs4 import BeautifulSoup
@@ -23,12 +24,29 @@ def get_place_from_map(url):
         place['longitude'] = m.group(2)
         place['accessibility'] = ACCESSIBILITY[int(re.search('stateIcons\[(\d)\]', marker).group(1)) - 1]
         return place
+    else:
+        return None
 
-    return None
+
+def write_csv(filename, places):
+    with open(filename, 'w', newline='') as csvfile:
+        fieldnames = ['name', 'link', 'map', 'image', 'latitude', 'longitude', 'accessibility']
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+        writer.writeheader()
+        for place in places:
+            writer.writerow(place)
 
 
 if __name__ == '__main__':
+    places = []
     for i in range(570):
         url = 'https://www.kafelanka.cz/user/place.map.php?id=' + str(i)
         place = get_place_from_map(url)
-        print(place)
+        if place is not None:
+            places.append(place)
+            print('{}: {}'.format(str(i).zfill(3), place['name']))
+        else:
+            print('{}:'.format(str(i).zfill(3)))
+
+    write_csv('places.csv', places)
