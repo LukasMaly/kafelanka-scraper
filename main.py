@@ -1,4 +1,5 @@
 import csv
+import json
 import re
 
 from bs4 import BeautifulSoup
@@ -38,6 +39,11 @@ def write_csv(filename, places):
             writer.writerow(place)
 
 
+def write_json(filename, places):
+    with open(filename, 'w') as jsonfile:
+        json.dump(places, jsonfile, ensure_ascii=False)
+
+
 if __name__ == '__main__':
     places = []
     for i in range(570):
@@ -50,3 +56,4 @@ if __name__ == '__main__':
             print('{}:'.format(str(i).zfill(3)))
 
     write_csv('places.csv', places)
+    write_json('places.json', places)
