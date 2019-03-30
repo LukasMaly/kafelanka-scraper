@@ -16,27 +16,16 @@ class TestKafelankaScraper(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_get_valid_place_from_map(self):
-        url = 'https://www.kafelanka.cz/user/place.map.php?id=42'
-        place = kafelanka_scraper.get_place_from_map(self.sites, url)
-        self.assertEqual(place['name'], 'Zídka')
-        self.assertEqual(place['area'], 'Brno - Wilsonův les')
-        self.assertEqual(place['description'], 'Zbytky budovy ve Wilsonově lese')
-        self.assertEqual(place['link'], 'https://www.kafelanka.cz/mista/zidka.php')
-        self.assertEqual(place['map'], 'https://www.kafelanka.cz/user/place.map.php?id=42')
-        self.assertEqual(place['image'], 'https://www.kafelanka.cz/v/zidka-1.jpg')
-        self.assertEqual(place['latitude'], '49.2045005528')
-        self.assertEqual(place['longitude'], '16.5794205666')
-        self.assertEqual(place['accessibility'], 'přístupné')
-
-    def test_get_empty_place_from_map(self):
-        url = 'https://www.kafelanka.cz/user/place.map.php?id=0'
-        place = kafelanka_scraper.get_place_from_map(self.sites, url)
-        self.assertEqual(place, None)
-
-    def test_get_invalid_place_from_map(self):
-        url = 'https://www.kafelanka.cz/user/place.map.php?id=239'
-        place = kafelanka_scraper.get_place_from_map(self.sites, url)
-        self.assertEqual(place, None)
+        place = next(kafelanka_scraper.places_generator(self.sites))
+        self.assertEqual(place['area'], 'Brno - Kraví hora')
+        self.assertEqual(place['name'], 'Bufet')
+        self.assertEqual(place['description'], 'Ruiny bývalého bufetu Pod Topoly na Kraví hoře')
+        self.assertEqual(place['url'], 'https://www.kafelanka.cz/mista/topoly.php')
+        self.assertEqual(place['map'], 'https://www.kafelanka.cz//user/place.map.php?id=11')
+        self.assertEqual(place['image'], 'https://www.kafelanka.cz/v/topoly-1.jpg')
+        self.assertEqual(place['latitude'], '49.2040904775')
+        self.assertEqual(place['longitude'], '16.58842206')
+        self.assertEqual(place['accessibility'], 'neexistuje')
 
 
 if __name__ == '__main__':
