@@ -31,6 +31,21 @@ def get_description(link):
     return None
 
 
+def get_area(link):
+    a = SOUPS['Brno'].find('a', href=link)
+    if a is not None:
+        return 'Brno - ' + a.findPrevious('li', {'class': 'lokalita'}).string
+    else:
+        a = SOUPS['Lokality'].find('a', href=link)
+        if a is not None:
+            return a.findPrevious('li', {'class': 'lokalita'}).string
+        else:
+            a = SOUPS['Clanky'].find('a', href=link)
+            if a is not None:
+                return a.findPrevious('li', {'class': 'lokalita'}).string
+    return None
+
+
 def get_place_from_map(url):
     soup = get_soup(url)
 
@@ -39,6 +54,7 @@ def get_place_from_map(url):
         marker = soup.find(string=re.compile('var points'))
         place['name'] = re.search('<h2>(.*)</h2>', marker).group(1)
         link = soup.find('a', string='zpět')['href']
+        place['area'] = get_area(link)
         place['description'] = get_description(link)
         place['link'] = 'http://www.kafelanka.cz' + link
         place['map'] = url
@@ -58,7 +74,7 @@ def get_place_from_map(url):
 
 def write_csv(filename, places):
     with open(filename, 'w', newline='') as csvfile:
-        fieldnames = ['name', 'description', 'link', 'map', 'image', 'latitude', 'longitude', 'accessibility']
+        fieldnames = ['name', 'area', 'description', 'link', 'map', 'image', 'latitude', 'longitude', 'accessibility']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
         for place in places:
