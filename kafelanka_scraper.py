@@ -16,37 +16,27 @@ def get_soup(url):
     return soup
 
 
-def get_description(link):
-    a = SOUPS['Brno'].find('a', href=link)
-    if a is not None:
-        return a['title']
-    else:
-        a = SOUPS['Lokality'].find('a', href=link)
+def get_site(sites, link):
+    for name in sites:
+        a = sites[name].find('a', href=link)
         if a is not None:
-            return a['title']
-        else:
-            a = SOUPS['Clanky'].find('a', href=link)
-            if a is not None:
-                return a['title']
-    return None
+            return name, a
+    else:
+        return None
 
 
-def get_area(link):
-    a = SOUPS['Brno'].find('a', href=link)
-    if a is not None:
+def get_description(a):
+    return a['title']
+
+
+def get_area(name, a):
+    if name == 'Brno':
         return 'Brno - ' + a.findPrevious('li', {'class': 'lokalita'}).string
     else:
-        a = SOUPS['Lokality'].find('a', href=link)
-        if a is not None:
-            return a.findPrevious('li', {'class': 'lokalita'}).string
-        else:
-            a = SOUPS['Clanky'].find('a', href=link)
-            if a is not None:
-                return a.findPrevious('li', {'class': 'lokalita'}).string
-    return None
+        return a.findPrevious('li', {'class': 'lokalita'}).string
 
 
-def get_place_from_map(url):
+def get_place_from_map(sites, url):
     soup = get_soup(url)
 
     if soup.body.string != '\n':
@@ -54,8 +44,12 @@ def get_place_from_map(url):
         marker = soup.find(string=re.compile('var points'))
         place['name'] = re.search('<h2>(.*)</h2>', marker).group(1)
         link = soup.find('a', string='zpět')['href']
-        place['area'] = get_area(link)
-        place['description'] = get_description(link)
+        site = get_site(sites, link)
+        if site is None:
+            return None
+        name, a = site
+        place['area'] = get_area(name, a)
+        place['description'] = get_description(a)
         place['link'] = 'http://www.kafelanka.cz' + link
         place['map'] = url
         image = re.search(r'src="(.*)" height', marker).group(1)
@@ -87,17 +81,16 @@ def write_json(filename, places):
 
 
 if __name__ == '__main__':
-    SOUPS = {'Brno': get_soup('https://www.kafelanka.cz/index.php'),
-            'Lokality': get_soup('https://www.kafelanka.cz/akce/index.php'),
-            'Clanky': get_soup('https://www.kafelanka.cz/projects/index.php')}
+    sites = {'Brno': get_soup('https://www.kafelanka.cz/index.php'),
+             'Lokality': get_soup('https://www.kafelanka.cz/akce/index.php')}
 
     places = []
     for i in range(570):
         url = 'https://www.kafelanka.cz/user/place.map.php?id=' + str(i)
-        place = get_place_from_map(url)
+        place = get_place_from_map(sites, url)
         if place is not None:
             places.append(place)
-            print('{}: {}'.format(str(i).zfill(3), place['name']))
+            print('{}: {}: {}'.format(str(i).zfill(3), place['area'], place['name']))
         else:
             print('{}:'.format(str(i).zfill(3)))
 
