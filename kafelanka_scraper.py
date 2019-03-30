@@ -50,11 +50,11 @@ def get_place_from_map(sites, url):
         name, a = site
         place['area'] = get_area(name, a)
         place['description'] = get_description(a)
-        place['link'] = 'http://www.kafelanka.cz' + link
+        place['link'] = 'https://www.kafelanka.cz' + link
         place['map'] = url
         image = re.search(r'src="(.*)" height', marker).group(1)
         if image != '/v/':
-            place['image'] = 'http://www.kafelanka.cz' + image
+            place['image'] = 'https://www.kafelanka.cz' + image
         else:
             place['image'] = None
         m = re.search('latLng\((.*), (.*)\)', marker)
