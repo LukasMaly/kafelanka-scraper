@@ -8,18 +8,45 @@ import requests
 
 ACCESSIBILITY = ['přístupné', 'po domluvě', 'nepřístupné', 'neexistuje']
 
-def get_place_from_map(url):
+
+def get_soup(url):
     response = requests.get(url)
     response.encoding = 'utf-8'
     soup = BeautifulSoup(response.text, 'html.parser')
+    return soup
+
+
+def get_description(link):
+    a = SOUPS['Brno'].find('a', href=link)
+    if a is not None:
+        return a['title']
+    else:
+        a = SOUPS['Lokality'].find('a', href=link)
+        if a is not None:
+            return a['title']
+        else:
+            a = SOUPS['Clanky'].find('a', href=link)
+            if a is not None:
+                return a['title']
+    return None
+
+
+def get_place_from_map(url):
+    soup = get_soup(url)
 
     if soup.body.string != '\n':
         place = {}
         marker = soup.find(string=re.compile('var points'))
         place['name'] = re.search('<h2>(.*)</h2>', marker).group(1)
-        place['link'] = 'http://www.kafelanka.cz' + soup.find('a', string='zpět')['href']
+        link = soup.find('a', string='zpět')['href']
+        place['description'] = get_description(link)
+        place['link'] = 'http://www.kafelanka.cz' + link
         place['map'] = url
-        place['image'] = 'http://www.kafelanka.cz' + re.search(r'src="(.*)" height', marker).group(1)
+        image = re.search(r'src="(.*)" height', marker).group(1)
+        if image != '/v/':
+            place['image'] = 'http://www.kafelanka.cz' + image
+        else:
+            place['image'] = None
         m = re.search('latLng\((.*), (.*)\)', marker)
         place['latitude'] = m.group(1)
         place['longitude'] = m.group(2)
@@ -31,9 +58,8 @@ def get_place_from_map(url):
 
 def write_csv(filename, places):
     with open(filename, 'w', newline='') as csvfile:
-        fieldnames = ['name', 'link', 'map', 'image', 'latitude', 'longitude', 'accessibility']
+        fieldnames = ['name', 'description', 'link', 'map', 'image', 'latitude', 'longitude', 'accessibility']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-
         writer.writeheader()
         for place in places:
             writer.writerow(place)
@@ -45,6 +71,10 @@ def write_json(filename, places):
 
 
 if __name__ == '__main__':
+    SOUPS = {'Brno': get_soup('https://www.kafelanka.cz/index.php'),
+            'Lokality': get_soup('https://www.kafelanka.cz/akce/index.php'),
+            'Clanky': get_soup('https://www.kafelanka.cz/projects/index.php')}
+
     places = []
     for i in range(570):
         url = 'https://www.kafelanka.cz/user/place.map.php?id=' + str(i)
