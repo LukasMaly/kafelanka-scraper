@@ -3,20 +3,19 @@ import unittest
 from bs4 import BeautifulSoup
 import requests
 
-import kafelanka_scraper
+from kafelanka_scraper import KafelankaScraper
 
 
 class TestKafelankaScraper(unittest.TestCase):
     def setUp(self):
-        self.sites = {'Brno': kafelanka_scraper.get_soup('https://www.kafelanka.cz/index.php'),
-                      'Lokality': kafelanka_scraper.get_soup('https://www.kafelanka.cz/akce/index.php')}
+        self.kafelanka_scraper = KafelankaScraper()
 
     def test_connection(self):
         response = requests.get('https://www.kafelanka.cz/index.php')
         self.assertEqual(response.status_code, 200)
 
     def test_get_place_from_map(self):
-        place = next(kafelanka_scraper.places_generator(self.sites))
+        place = next(self.kafelanka_scraper.places_generator())
         self.assertEqual(place['area'], 'Brno - Kraví hora')
         self.assertEqual(place['name'], 'Bufet')
         self.assertEqual(place['description'], 'Ruiny bývalého bufetu Pod Topoly na Kraví hoře')
