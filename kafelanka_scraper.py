@@ -39,6 +39,8 @@ def get_details_at_page(place):
     if a:
         place['map'] = 'https://www.kafelanka.cz/' + a['href']
         place = get_details_at_map(place)
+    else:
+        place = get_details_at_map_2013(place)
     return place
 
 
@@ -60,9 +62,33 @@ def places_generator(sites):
                 yield place
 
 
+def load_map_2013(filename='map_2013.csv'):
+    places = []
+    with open(filename) as csvfile:
+        reader = csv.reader(csvfile)
+        next(reader)
+        for row in reader:
+            place = {'name': row[0], 'url': row[1], 'image': row[2],
+                     'latitude': row[3], 'longitude': row[4], 'accessibility': row[5]}
+            places.append(place)
+    return places
+
+
+def get_details_at_map_2013(place):
+    for map_2013_place in map_2013:
+        if place['url'] == map_2013_place['url']:
+            place['image'] = map_2013_place['image']
+            place['latitude'] = map_2013_place['latitude']
+            place['longitude'] = map_2013_place['longitude']
+            place['accessibility'] = map_2013_place['accessibility']
+            return place
+    return place
+
+
 def write_csv(filename, places):
     with open(filename, 'w', newline='') as csvfile:
-        fieldnames = ['area', 'name', 'description', 'url', 'map', 'image', 'latitude', 'longitude', 'accessibility']
+        fieldnames = ['area', 'name', 'description', 'url', 'map',
+                      'image', 'latitude', 'longitude', 'accessibility']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
         for place in places:
@@ -77,7 +103,8 @@ def write_json(filename, places):
 if __name__ == '__main__':
     sites = {'Brno': get_soup('https://www.kafelanka.cz/index.php'),
              'Lokality': get_soup('https://www.kafelanka.cz/akce/index.php')}
-    
+    map_2013 = load_map_2013()
+
     places = []
     i = 0
     for place in places_generator(sites):

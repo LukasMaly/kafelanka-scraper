@@ -15,7 +15,7 @@ class TestKafelankaScraper(unittest.TestCase):
         response = requests.get('https://www.kafelanka.cz/index.php')
         self.assertEqual(response.status_code, 200)
 
-    def test_get_valid_place_from_map(self):
+    def test_get_place_from_map(self):
         place = next(kafelanka_scraper.places_generator(self.sites))
         self.assertEqual(place['area'], 'Brno - Kraví hora')
         self.assertEqual(place['name'], 'Bufet')
