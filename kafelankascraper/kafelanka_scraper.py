@@ -3,6 +3,7 @@ import json
 import re
 
 from bs4 import BeautifulSoup
+import geojson
 import requests
 
 
@@ -39,6 +40,11 @@ class KafelankaScraper():
         place['longitude'] = markers[0]['longitude']
         place['accessibility'] = markers[0]['accessibility']
         place['markers'] = markers
+        pattern = r'L.geoJSON\(([\s\S]*)\).addTo\(map\);'
+        match = re.search(pattern, script)
+        if match:
+            feature_collection = geojson.loads(match.group(1))
+            place['features'] = feature_collection['features']
         return place
 
     def _get_details_at_page(self, place):
@@ -60,7 +66,7 @@ class KafelankaScraper():
                 for a in ul.find_all('a'):
                     place = {'area': None, 'name': None, 'description': None, 'url': None,
                              'map': None, 'image': None, 'latitude': None, 'longitude': None,
-                             'accessibility': None, 'markers': None}
+                             'accessibility': None}
                     place['area'] = a.findPrevious('li', {'class': 'lokalita'}).string
                     if name == 'Brno':
                         place['area'] = 'Brno - ' + place['area']
