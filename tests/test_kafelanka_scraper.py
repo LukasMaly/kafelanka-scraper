@@ -21,8 +21,8 @@ class TestKafelankaScraper(unittest.TestCase):
         self.assertEqual(place['url'], 'https://www.kafelanka.cz/mista/topoly.php')
         self.assertEqual(place['map'], 'https://www.kafelanka.cz/user/place.map.php?id=11')
         self.assertEqual(place['image'], 'https://www.kafelanka.cz/v/topoly-1.jpg')
-        self.assertEqual(place['latitude'], '49.2040904775')
-        self.assertEqual(place['longitude'], '16.58842206')
+        self.assertEqual(place['latitude'], 49.2040904775)
+        self.assertEqual(place['longitude'], 16.58842206)
         self.assertEqual(place['accessibility'], 'neexistuje')
 
 

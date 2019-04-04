@@ -31,8 +31,8 @@ class KafelankaScraper():
         for match in matches:
             marker = {'title': match[0],
                       'image': 'https://www.kafelanka.cz' + match[2],
-                      'latitude': match[3], 
-                      'longitude': match[4],
+                      'latitude': float(match[3]),
+                      'longitude': float(match[4]),
                       'accessibility': self.accessibilities[int(match[1]) - 1]}
             markers.append(marker)
         place['image'] = markers[0]['image']
@@ -83,7 +83,8 @@ class KafelankaScraper():
             next(reader)
             for row in reader:
                 place = {'name': row[0], 'url': row[1], 'image': row[2],
-                         'latitude': row[3], 'longitude': row[4], 'accessibility': row[5]}
+                         'latitude': float(row[3]), 'longitude': float(row[4]), 
+                         'accessibility': row[5]}
                 places.append(place)
         return places
 
