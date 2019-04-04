@@ -1,0 +1,1 @@
+from .kafelanka_scraper import KafelankaScraper

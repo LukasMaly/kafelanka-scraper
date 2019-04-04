@@ -10,41 +10,47 @@ class KafelankaScraper():
     accessibilities = ['přístupné', 'po domluvě', 'nepřístupné', 'neexistuje']
 
     def __init__(self):
-        self.sites = {'Brno': self.__get_soup('https://www.kafelanka.cz/index.php'),
-                      'Lokality': self.__get_soup('https://www.kafelanka.cz/akce/index.php')}
-        self.map_2013 = self.__load_map_2013()
+        self.sites = {'Brno': self._get_soup('https://www.kafelanka.cz/index.php'),
+                      'Lokality': self._get_soup('https://www.kafelanka.cz/akce/index.php')}
+        self.map_2013 = self._load_map_2013()
 
     @staticmethod
-    def __get_soup(url):
+    def _get_soup(url):
         response = requests.get(url)
         response.encoding = 'utf-8'
         soup = BeautifulSoup(response.text, 'html.parser')
         return soup
 
-    def __get_details_at_map(self, place):
-        soup = self.__get_soup(place['map'])
-        marker = soup.find(string=re.compile('var points'))
-        image = re.search(r'src="(.*)" height', marker).group(1)
-        if image != '/v/':
-            place['image'] = 'https://www.kafelanka.cz' + image
-        else:
-            place['image'] = None
-        m = re.search('latLng\((.*), (.*)\)', marker)
-        place['latitude'] = m.group(1)
-        place['longitude'] = m.group(2)
-        place['accessibility'] = self.accessibilities[int(re.search('stateIcons\[(\d)\]', marker).group(1)) - 1]
+    def _get_details_at_map(self, place):
+        soup = self._get_soup(place['map'])
+        script = soup.find(string=re.compile('var points'))
+        pattern = r"""L.marker\(pos,\{title : "(.*)", icon : stateIcons\[(\d)\]\}\).addTo\(map\).bindPopup\('<h2>.*</h2><img src="(.*)" height="100" /><p>GPS: (.*), (.*)</p>'\);"""
+        matches = re.findall(pattern, script)
+        markers = []
+        for match in matches:
+            marker = {'title': match[0],
+                      'image': 'https://www.kafelanka.cz' + match[2],
+                      'latitude': match[3], 
+                      'longitude': match[4],
+                      'accessibility': self.accessibilities[int(match[1]) - 1]}
+            markers.append(marker)
+        place['image'] = markers[0]['image']
+        place['latitude'] = markers[0]['latitude']
+        place['longitude'] = markers[0]['longitude']
+        place['accessibility'] = markers[0]['accessibility']
+        place['markers'] = markers
         return place
 
-    def __get_details_at_page(self, place):
-        soup = self.__get_soup(place['url'])
+    def _get_details_at_page(self, place):
+        soup = self._get_soup(place['url'])
         page_id = re.search('getMapLink\((\d[0-9]+)\)', soup.text).group(1)
-        map_link = self.__get_soup('https://www.kafelanka.cz/user/map.link.php?id=' + page_id)
+        map_link = self._get_soup('https://www.kafelanka.cz/user/map.link.php?id=' + page_id)
         a = map_link.find('a', attrs={'class': 'showOnMap iframe'})
         if a:
-            place['map'] = 'https://www.kafelanka.cz/' + a['href']
-            place = self.__get_details_at_map(place)
+            place['map'] = 'https://www.kafelanka.cz' + a['href']
+            place = self._get_details_at_map(place)
         else:
-            place = self.__get_details_at_map_2013(place)
+            place = self._get_details_at_map_2013(place)
         return place
 
     def places_generator(self):
@@ -54,17 +60,17 @@ class KafelankaScraper():
                 for a in ul.find_all('a'):
                     place = {'area': None, 'name': None, 'description': None, 'url': None,
                              'map': None, 'image': None, 'latitude': None, 'longitude': None,
-                             'accessibility': None}
+                             'accessibility': None, 'markers': None}
                     place['area'] = a.findPrevious('li', {'class': 'lokalita'}).string
                     if name == 'Brno':
                         place['area'] = 'Brno - ' + place['area']
                     place['name'] = a.string
                     place['description'] = a['title']
                     place['url'] = 'https://www.kafelanka.cz' + a['href']
-                    place = self.__get_details_at_page(place)
+                    place = self._get_details_at_page(place)
                     yield place
 
-    def __load_map_2013(self, filename='map_2013.csv'):
+    def _load_map_2013(self, filename='map_2013.csv'):
         places = []
         with open(filename) as csvfile:
             reader = csv.reader(csvfile)
@@ -75,7 +81,7 @@ class KafelankaScraper():
                 places.append(place)
         return places
 
-    def __get_details_at_map_2013(self, place):
+    def _get_details_at_map_2013(self, place):
         for map_2013_place in self.map_2013:
             if place['url'] == map_2013_place['url']:
                 place['image'] = map_2013_place['image']
@@ -90,7 +96,7 @@ class KafelankaScraper():
         with open(filename, 'w', newline='') as csvfile:
             fieldnames = ['area', 'name', 'description', 'url', 'map',
                           'image', 'latitude', 'longitude', 'accessibility']
-            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames, extrasaction='ignore')
             writer.writeheader()
             for place in places:
                 writer.writerow(place)
@@ -110,8 +116,6 @@ if __name__ == '__main__':
         places.append(place)
         i += 1
         print('{}: {}: {}'.format(str(i).zfill(3), place['area'], place['name']))
-        if i > 10:
-            break
 
     kafelanka_scraper.write_csv('places.csv', places)
     kafelanka_scraper.write_json('places.json', places)

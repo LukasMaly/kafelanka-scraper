@@ -1,9 +1,8 @@
 import unittest
 
-from bs4 import BeautifulSoup
 import requests
 
-from kafelanka_scraper import KafelankaScraper
+from kafelankascraper import KafelankaScraper
 
 
 class TestKafelankaScraper(unittest.TestCase):
@@ -20,7 +19,7 @@ class TestKafelankaScraper(unittest.TestCase):
         self.assertEqual(place['name'], 'Bufet')
         self.assertEqual(place['description'], 'Ruiny bývalého bufetu Pod Topoly na Kraví hoře')
         self.assertEqual(place['url'], 'https://www.kafelanka.cz/mista/topoly.php')
-        self.assertEqual(place['map'], 'https://www.kafelanka.cz//user/place.map.php?id=11')
+        self.assertEqual(place['map'], 'https://www.kafelanka.cz/user/place.map.php?id=11')
         self.assertEqual(place['image'], 'https://www.kafelanka.cz/v/topoly-1.jpg')
         self.assertEqual(place['latitude'], '49.2040904775')
         self.assertEqual(place['longitude'], '16.58842206')
