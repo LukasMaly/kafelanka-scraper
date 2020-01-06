@@ -78,6 +78,14 @@ class KafelankaScraper():
                     place = self._get_details_at_page(place)
                     yield place
 
+    def places_couter(self):
+        counter = 0
+        for name in self.sites:
+            soup = self.sites[name]
+            for ul in soup.find_all('ul', attrs={'class': 'mista'}):
+                counter += len(ul.find_all('a'))
+        return counter
+
     def _load_map_2013(self, filename='map_2013.csv'):
         places = []
         with open(filename) as csvfile:
@@ -121,10 +129,10 @@ if __name__ == '__main__':
 
     places = []
     i = 0
+    counter = kafelanka_scraper.places_couter()
     for place in kafelanka_scraper.places_generator():
         places.append(place)
         i += 1
-        print('{}: {}: {}'.format(str(i).zfill(3), place['area'], place['name']))
-
+        print('{}/{}: {}: {}'.format(str(i).zfill(3), str(counter).zfill(3), place['area'], place['name']))
     kafelanka_scraper.write_csv('places.csv', places)
     kafelanka_scraper.write_json('places.json', places)
