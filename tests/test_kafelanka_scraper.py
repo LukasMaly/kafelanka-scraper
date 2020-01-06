@@ -1,20 +1,19 @@
 import unittest
 
-import requests
+from requests_html import HTMLSession
 
 from kafelankascraper import KafelankaScraper
 
 
 class TestKafelankaScraper(unittest.TestCase):
-    def setUp(self):
-        self.kafelanka_scraper = KafelankaScraper()
-
     def test_connection(self):
-        response = requests.get('https://www.kafelanka.cz/index.php')
-        self.assertEqual(response.status_code, 200)
+        session = HTMLSession()
+        r = session.get('https://www.kafelanka.cz/index.php')
+        self.assertEqual(r.status_code, 200)
 
     def test_get_place_from_map(self):
-        place = next(self.kafelanka_scraper.places_generator())
+        kafelanka_scraper = KafelankaScraper()
+        place = next(kafelanka_scraper.places_generator())
         self.assertEqual(place['area'], 'Brno - Kraví hora')
         self.assertEqual(place['name'], 'Bufet')
         self.assertEqual(place['description'], 'Ruiny bývalého bufetu Pod Topoly na Kraví hoře')

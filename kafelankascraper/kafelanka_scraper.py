@@ -4,7 +4,7 @@ import re
 
 from bs4 import BeautifulSoup
 import geojson
-import requests
+from requests_html import HTMLSession
 
 
 class KafelankaScraper():
@@ -16,10 +16,13 @@ class KafelankaScraper():
         self.map_2013 = self._load_map_2013()
 
     @staticmethod
-    def _get_soup(url):
-        response = requests.get(url)
-        response.encoding = 'utf-8'
-        soup = BeautifulSoup(response.text, 'html.parser')
+    def _get_soup(url, render=False):
+        session = HTMLSession()
+        r = session.get(url)
+        r.encoding = 'utf-8'
+        if render:
+            r.html.render()
+        soup = BeautifulSoup(r.html.html, 'html.parser')
         return soup
 
     def _get_details_at_map(self, place):
@@ -48,11 +51,10 @@ class KafelankaScraper():
         return place
 
     def _get_details_at_page(self, place):
-        soup = self._get_soup(place['url'])
-        page_id = re.search('getMapLink\((\d[0-9]+)\)', soup.text).group(1)
-        map_link = self._get_soup('https://www.kafelanka.cz/user/map.link.php?id=' + page_id)
-        a = map_link.find('a', attrs={'class': 'showOnMap iframe'})
-        if a:
+        soup = self._get_soup(place['url'], render=True)
+        map_link = soup.find('div', attrs={'id': 'mapLink'})
+        if len(map_link.contents) > 0:
+            a = map_link.find('a', attrs={'class': 'showOnMap iframe'})
             place['map'] = 'https://www.kafelanka.cz' + a['href']
             place = self._get_details_at_map(place)
         else:
