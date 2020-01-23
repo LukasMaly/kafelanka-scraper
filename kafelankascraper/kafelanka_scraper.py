@@ -1,5 +1,6 @@
 import csv
 import json
+import os
 import re
 
 from bs4 import BeautifulSoup
@@ -21,7 +22,7 @@ class KafelankaScraper():
         r = session.get(url)
         r.encoding = 'utf-8'
         if render:
-            r.html.render()
+            r.html.render(timeout=1)
         soup = BeautifulSoup(r.html.html, 'html.parser')
         return soup
 
@@ -61,11 +62,15 @@ class KafelankaScraper():
             place = self._get_details_at_map_2013(place)
         return place
 
-    def places_generator(self):
+    def places_generator(self, skip=0):
+        counter = 0
         for name in self.sites:
             soup = self.sites[name]
             for ul in soup.find_all('ul', attrs={'class': 'mista'}):
                 for a in ul.find_all('a'):
+                    counter += 1
+                    if counter <= skip:
+                        continue
                     place = {'area': None, 'name': None, 'description': None, 'url': None,
                              'map': None, 'image': None, 'latitude': None, 'longitude': None,
                              'accessibility': None}
@@ -126,13 +131,17 @@ class KafelankaScraper():
 
 if __name__ == '__main__':
     kafelanka_scraper = KafelankaScraper()
-
     places = []
-    i = 0
+    if os.path.isfile('./places.json'):
+        with open('./places.json') as fp:
+            places = json.load(fp)
+    i = len(places)
     counter = kafelanka_scraper.places_couter()
-    for place in kafelanka_scraper.places_generator():
-        places.append(place)
-        i += 1
-        print('{}/{}: {}: {}'.format(str(i).zfill(3), str(counter).zfill(3), place['area'], place['name']))
-    kafelanka_scraper.write_csv('places.csv', places)
-    kafelanka_scraper.write_json('places.json', places)
+    try:
+        for place in kafelanka_scraper.places_generator(skip=i):
+            places.append(place)
+            i += 1
+            print('{}/{}: {}: {}'.format(str(i).zfill(3), str(counter).zfill(3), place['area'], place['name']))
+    finally:
+        kafelanka_scraper.write_csv('places.csv', places)
+        kafelanka_scraper.write_json('places.json', places)
