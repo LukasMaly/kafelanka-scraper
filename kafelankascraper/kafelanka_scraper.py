@@ -6,6 +6,7 @@ import re
 from bs4 import BeautifulSoup
 import geojson
 import requests
+import simplekml
 
 
 class KafelankaScraper():
@@ -124,6 +125,36 @@ class KafelankaScraper():
         with open(filename, 'w') as jsonfile:
             json.dump(places, jsonfile, ensure_ascii=False)
 
+    @staticmethod
+    def write_kml(filename, places):
+        kml = simplekml.Kml()
+        for place in places:
+            if place['latitude'] is not None:
+                multipnt = kml.newmultigeometry(
+                    name=place['name'],
+                    description=place['description'])
+                if 'markers' in place:
+                    for marker in place['markers']:
+                        multipnt.newpoint(
+                            name=marker['title'],
+                            coords=[(marker['longitude'], marker['latitude'])]
+                        )
+                else:
+                    multipnt.newpoint(
+                        coords=[(place['longitude'], place['latitude'])]
+                    )
+                if 'features' in place:
+                    for feature in place['features']:
+                        if feature['geometry']['type'] == 'LineString':
+                            multipnt.newlinestring(
+                                coords=[(lon, lat) for lon, lat in feature['geometry']['coordinates']]
+                            )
+                        elif feature['geometry']['type'] == 'Polygon':
+                            multipnt.newpolygon(
+                                outerboundaryis=[(lon, lat) for lon, lat in feature['geometry']['coordinates'][0]]
+                    )
+        kml.save(filename)
+
 
 if __name__ == '__main__':
     kafelanka_scraper = KafelankaScraper()
@@ -141,3 +172,4 @@ if __name__ == '__main__':
     finally:
         kafelanka_scraper.write_csv('places.csv', places)
         kafelanka_scraper.write_json('places.json', places)
+        kafelanka_scraper.write_kml('places.kml', places)
