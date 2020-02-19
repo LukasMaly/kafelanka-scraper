@@ -1,15 +1,14 @@
 import unittest
 
-from requests_html import HTMLSession
+import requests
 
 from kafelankascraper import KafelankaScraper
 
 
 class TestKafelankaScraper(unittest.TestCase):
     def test_connection(self):
-        session = HTMLSession()
-        r = session.get('https://www.kafelanka.cz/index.php')
-        self.assertEqual(r.status_code, 200)
+        response = requests.get('https://www.kafelanka.cz/index.php')
+        self.assertEqual(response.status_code, 200)
 
     def test_get_place_from_map(self):
         kafelanka_scraper = KafelankaScraper()

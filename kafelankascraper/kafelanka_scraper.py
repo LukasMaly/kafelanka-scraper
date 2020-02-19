@@ -5,7 +5,7 @@ import re
 
 from bs4 import BeautifulSoup
 import geojson
-from requests_html import HTMLSession
+import requests
 
 
 class KafelankaScraper():
@@ -17,13 +17,10 @@ class KafelankaScraper():
         self.map_2013 = self._load_map_2013()
 
     @staticmethod
-    def _get_soup(url, render=False):
-        session = HTMLSession()
-        r = session.get(url)
-        r.encoding = 'utf-8'
-        if render:
-            r.html.render(timeout=1)
-        soup = BeautifulSoup(r.html.html, 'html.parser')
+    def _get_soup(url):
+        response = requests.get(url)
+        response.encoding = 'utf-8'
+        soup = BeautifulSoup(response.text, 'html.parser')
         return soup
 
     def _get_details_at_map(self, place):
@@ -52,11 +49,10 @@ class KafelankaScraper():
         return place
 
     def _get_details_at_page(self, place):
-        soup = self._get_soup(place['url'], render=True)
-        map_link = soup.find('div', attrs={'id': 'mapLink'})
-        if len(map_link.contents) > 0:
-            a = map_link.find('a', attrs={'class': 'showOnMap iframe'})
-            place['map'] = 'https://www.kafelanka.cz' + a['href']
+        soup = self._get_soup(place['url'])
+        place['id'] = int(soup.find('body').attrs['data-id'])
+        if len(requests.get('https://www.kafelanka.cz/user/map.link.php?id=' + str(place['id'])).content) > 0:
+            place['map'] = 'https://www.kafelanka.cz/user/place.map.php?id=' + str(place['id'])
             place = self._get_details_at_map(place)
         else:
             place = self._get_details_at_map_2013(place)
@@ -71,7 +67,7 @@ class KafelankaScraper():
                     counter += 1
                     if counter <= skip:
                         continue
-                    place = {'area': None, 'name': None, 'description': None, 'url': None,
+                    place = {'id': None, 'area': None, 'name': None, 'description': None, 'url': None,
                              'map': None, 'image': None, 'latitude': None, 'longitude': None,
                              'accessibility': None}
                     place['area'] = a.findPrevious('li', {'class': 'lokalita'}).string
